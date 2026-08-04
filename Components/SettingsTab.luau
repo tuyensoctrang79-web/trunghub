@@ -1,7 +1,7 @@
 return function(Window)
 	local function CloneReference(Object)
-		if Abysall and Abysall.Environment.cloneref then
-			return Abysall.Environment.cloneref(Object)
+		if TrungHub and TrungHub.Environment and TrungHub.Environment.cloneref then
+			return TrungHub.Environment.cloneref(Object)
 		else
 			return Object
 		end
@@ -13,9 +13,9 @@ return function(Window)
 		end
 	})
 
-	local Library = Abysall.Interface.Library
-	local SaveManager = Abysall.Interface.SaveManager
-	local ThemeManager = Abysall.Interface.ThemeManager
+	local Library = TrungHub.Interface.Library
+	local SaveManager = TrungHub.Interface.SaveManager
+	local ThemeManager = TrungHub.Interface.ThemeManager
 	
 	local Toggles = Library.Toggles
 	local Options = Library.Options
@@ -30,6 +30,7 @@ return function(Window)
 			Library.KeybindFrame.Visible = value
 		end,
 	})
+	
 	MenuGroup:AddToggle("ShowCustomCursor", {
 		Text = "Custom Cursor",
 		Default = false,
@@ -44,18 +45,22 @@ return function(Window)
 			"Obsidian",
 			"Linoria"
 		},
-		Default = (Abysall.UILibrary == "Linoria" and 2 or 1),
+		Default = (TrungHub.UILibrary == "Linoria" and 2 or 1),
 		Callback = function(Value)
-			if Abysall.Environment.writefile and Abysall.Environment.readfile then
-				if not Abysall.Environment.isfile("Abysall/UserData.json") then
+			if TrungHub.Environment and TrungHub.Environment.writefile and TrungHub.Environment.readfile then
+				if not TrungHub.Environment.isfolder("TrungHub") then
+					TrungHub.Environment.makefolder("TrungHub")
+				end
+
+				if not TrungHub.Environment.isfile("TrungHub/UserData.json") then
 					local Data = {
 						TotalExecutions = 0,
 						UILibrary = "Obsidian"
 					}
-					Abysall.Environment.writefile("Abysall/UserData.json", Services.HttpService:JSONEncode(Data))
+					TrungHub.Environment.writefile("TrungHub/UserData.json", Services.HttpService:JSONEncode(Data))
 				end
 
-				local UserData = Abysall.Environment.readfile("Abysall/UserData.json")
+				local UserData = TrungHub.Environment.readfile("TrungHub/UserData.json")
 				local Decoded = Services.HttpService:JSONDecode(UserData)
 				Decoded.UILibrary = Value
 
@@ -63,10 +68,10 @@ return function(Window)
 					Decoded.UILibrary = "Obsidian"
 				end
 
-				Abysall.TotalExecutions = Decoded.TotalExecutions
-				Abysall.UILibrary = Decoded.UILibrary
+				TrungHub.TotalExecutions = Decoded.TotalExecutions
+				TrungHub.UILibrary = Decoded.UILibrary
 
-				Abysall.Environment.writefile("Abysall/UserData.json", Services.HttpService:JSONEncode(Decoded))
+				TrungHub.Environment.writefile("TrungHub/UserData.json", Services.HttpService:JSONEncode(Decoded))
 			end
 		end
 	})
@@ -84,12 +89,17 @@ return function(Window)
 			Library:SetDPIScale(DPI)
 		end,
 	})
+	
 	MenuGroup:AddDivider()
 	MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
 	
 	MenuGroup:AddButton("Copy Discord Invite", function()
-		toclipboard("https://dsc.gg/abysallhub")
-		Library:Notify("Discord invite copied.")
+		if setclipboard or toclipboard then
+			(setclipboard or toclipboard)("https://discord.gg/YOUR_DISCORD_INVITE")
+			Library:Notify("Discord invite copied.")
+		else
+			Library:Notify("Clipboard function not supported.")
+		end
 	end)
 	
 	MenuGroup:AddButton("Unload", function()
@@ -102,8 +112,11 @@ return function(Window)
 	SaveManager:SetLibrary(Library)
 	SaveManager:IgnoreThemeSettings()
 	SaveManager:SetIgnoreIndexes({"UILibrary"})
-	ThemeManager:SetFolder("Abysall")
-	SaveManager:SetFolder("Abysall/" .. Abysall.SavePath)
+	
+	-- Thiết lập thư mục lưu Config & Theme riêng cho Trung Hub
+	ThemeManager:SetFolder("TrungHub")
+	SaveManager:SetFolder("TrungHub/" .. (TrungHub.SavePath or "Default"))
+	
 	SaveManager:BuildConfigSection(SettingsTab)
 	ThemeManager:ApplyToTab(SettingsTab)
 	SaveManager:LoadAutoloadConfig()
